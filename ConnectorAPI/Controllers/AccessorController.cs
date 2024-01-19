@@ -23,11 +23,13 @@ namespace ConnectorAPI.Controllers
             if (connection is null) return NotFound("Connection not found");
 
             var resource = _db.Resources
-		        .SingleOrDefault(r => r.ResourceId == accessRequest.ResourceId && r.Connection == connection && r.ResourceName == accessRequest.ResourceName);
+                .SingleOrDefault(r => r.ResourceId == accessRequest.ResourceId && r.Connection == connection && r.ResourceName == accessRequest.ResourceName);
             if (resource is null) return NotFound("Resource not found");
 
-            var attributes = _db.Attributes.Where(attr => attr.Resource == resource).ToList();
-            if (attributes.Count() == 0) return NotFound("No Attributes were permitted");
+            var attributes = _db.Attributes
+                .Where(attr => attr.Resource == resource && accessRequest.AccessLevel >= attr.MinimumAccessLevel)
+                .ToList();
+            if (attributes.Count == 0) return NotFound("No Attributes were permitted");
 
             var query = $"SELECT {string.Join(',', attributes.Select(a => a.AttributeColumnName))} FROM {resource.ResourceTableName} WHERE Id=@id";
             var connStr = connection.DBConnectionString;
@@ -41,7 +43,7 @@ namespace ConnectorAPI.Controllers
             if (reader is null) return NotFound();
 
             List<Dictionary<string, string>> resultSet = new();
-            while(reader.Read())
+            while (reader.Read())
             {
                 var entry = new Dictionary<string, string>();
                 var schema = reader.GetColumnSchema();
@@ -53,7 +55,7 @@ namespace ConnectorAPI.Controllers
 
                 resultSet.Add(entry);
 
-            } 
+            }
             reader.Close();
 
             return Ok(resultSet);

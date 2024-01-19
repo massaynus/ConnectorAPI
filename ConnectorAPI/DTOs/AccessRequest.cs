@@ -8,6 +8,7 @@
 		public required string ResourceId { get; init; }
 		public required string ResourceName { get; init; }
 
+		public required short AccessLevel { get; init; }
 	}
 }
 
