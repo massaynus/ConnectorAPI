@@ -1,5 +1,4 @@
-﻿using System;
-using ConnectorAPI.DbContexts.ConnectorDb;
+﻿using ConnectorAPI.DbContexts.ConnectorDb;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectorAPI.DbContexts
