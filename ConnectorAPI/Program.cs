@@ -1,5 +1,7 @@
 ﻿using ConnectorAPI.DbContexts;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 internal class Program
 {
@@ -9,10 +11,16 @@ internal class Program
 
         // Add services to the container.
         builder.Services.AddAutoMapper(typeof(Program));
-        builder.Services.AddControllersWithViews();
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddNewtonsoftJson(opt =>
+                {
+                    opt.SerializerSettings.ContractResolver = new DefaultContractResolver();
+                    opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                }
+            );
         builder.Services.AddDbContext<ConnectorDbContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectorContext"))
+            options => options
+            .UseSqlServer(builder.Configuration.GetConnectionString("ConnectorContext"))
         );
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -8,7 +8,7 @@ using AutoMapper;
 namespace ConnectorAPI.Controllers
 {
     [ApiController]
-	[Route("[controller]")]
+    [Route("[controller]")]
     public class ResourceController : ControllerBase
     {
         private readonly ConnectorDbContext _context;
@@ -26,7 +26,7 @@ namespace ConnectorAPI.Controllers
             return await _context.Resources.ToListAsync();
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = nameof(GetResource))]
         public async Task<ActionResult<Resource>> GetResource(Guid id)
         {
             var resource = await _context.Resources.FindAsync(id);
@@ -46,11 +46,10 @@ namespace ConnectorAPI.Controllers
             if (connection is null) return BadRequest(new { Message = "Can't create resource for non existing connection" });
 
             var resource = _mapper.Map<Resource>(createResource);
-            resource.connection = connection;
             _context.Resources.Add(resource);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetResource", new { id = resource.Id }, resource);
+            return Ok(resource);
         }
 
         [HttpDelete("{id}")]

@@ -4,6 +4,7 @@ using ConnectorAPI.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConnectorAPI.Migrations
 {
     [DbContext(typeof(ConnectorDbContext))]
-    partial class ConnectorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240119030145_AddResourceIdToResources")]
+    partial class AddResourceIdToResources
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,9 +56,6 @@ namespace ConnectorAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("ConnectionId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("ResourceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -68,13 +68,16 @@ namespace ConnectorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.Property<Guid>("connectionId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.HasIndex("ConnectionId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ResourceId");
 
                     b.HasIndex("ResourceName");
+
+                    b.HasIndex("connectionId");
 
                     b.ToTable("Resources");
                 });
@@ -108,13 +111,13 @@ namespace ConnectorAPI.Migrations
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Resource", b =>
                 {
-                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.Connection", "Connection")
+                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.Connection", "connection")
                         .WithMany("sharedResources")
-                        .HasForeignKey("ConnectionId")
+                        .HasForeignKey("connectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Connection");
+                    b.Navigation("connection");
                 });
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.ResourceAttributes", b =>

@@ -10,7 +10,7 @@ namespace ConnectorAPI
 		{
 			CreateMap<CreateConnectionRequest, Connection>();
 			CreateMap<CreateResourceRequest, Resource>();
-			CreateMap<CreateResourceRequest, ResourceAttributes>();
+			CreateMap<CreateResourceAttributes, ResourceAttributes>();
 		}
 	}
 }

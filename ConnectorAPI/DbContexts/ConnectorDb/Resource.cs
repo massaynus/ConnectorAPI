@@ -9,11 +9,12 @@ namespace ConnectorAPI.DbContexts.ConnectorDb
 	{
 		public Guid Id { get; set; }
 
-		public string? ResourceId { get; set; }
+		public required string ResourceId { get; set; }
 		public required string ResourceName { get; set; }
 		public required string ResourceTableName { get; set; }
 
-		public required Connection connection { get; set; }
+		public required Guid ConnectionId { get; set; }
+		public required Connection Connection { get; set; }
 		public List<ResourceAttributes> Attributes { get; } = new();
 	}
 }

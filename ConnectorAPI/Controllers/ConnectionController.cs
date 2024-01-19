@@ -30,19 +30,19 @@ public class ConnectionConroller : ControllerBase
     {
         return _db.Connections.ToList();
     }
-     
-	[HttpGet("{id}")]
-	public async Task<ActionResult<Resource>> GetConnection(Guid id)
-	{
-	    var connection = await _db.Connections.FindAsync(id);
 
-	    if (connection == null)
-	    {
-		return NotFound();
-	    }
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Resource>> GetConnection(Guid id)
+    {
+        var connection = await _db.Connections.FindAsync(id);
+
+        if (connection == null)
+        {
+            return NotFound();
+        }
 
         return Ok(connection);
-	}
+    }
 
     [HttpPost(Name = "CreateConnection")]
     public ActionResult<Connection> Create([FromBody] CreateConnectionRequest connectionRequest)
@@ -51,11 +51,11 @@ public class ConnectionConroller : ControllerBase
         _db.Connections.Add(connection);
         _db.SaveChanges();
 
-        return CreatedAtAction(nameof(GetConnection), new {id = connection.Id}, connection);
+        return CreatedAtAction(nameof(GetConnection), new { id = connection.Id }, connection);
     }
 
     [HttpDelete("{id}", Name = "DeleteConnection")]
-    public IActionResult Delete( Guid id)
+    public IActionResult Delete(Guid id)
     {
         var connection = _db.Connections.SingleOrDefault(cn => cn.Id == id);
         if (connection is null) return NotFound();
