@@ -26,21 +26,18 @@ namespace ConnectorAPI.Controllers
         public async Task<ActionResult<List<Dictionary<string, string>>>> GetResource([FromBody] AccessRequest accessRequest)
         {
             var connection = _db.Connections
-                .Include(c => c.Resources)
-                    .ThenInclude(r => r.Attributes)
+                .Include(c => c.Resources.Where(r => r.ResourceId == accessRequest.ResourceId && r.ResourceName == accessRequest.ResourceName))
+                    .ThenInclude(r => r.Attributes.Where(at => accessRequest.AccessLevel >= at.MinimumAccessLevel))
                 .FirstOrDefault(cn => cn.OwnerNode == accessRequest.OwnerNode && cn.AccessorNode == accessRequest.GuestNode);
             if (connection is null) return NotFound("Connection not found");
 
-            var resource = connection.Resources
-                .FirstOrDefault(r => r.ResourceId == accessRequest.ResourceId && r.ResourceName == accessRequest.ResourceName);
+            var resource = connection.Resources.FirstOrDefault();
             if (resource is null) return NotFound("Resource not found");
 
-            var attributes = resource.Attributes
-                .Where(attr => accessRequest.AccessLevel >= attr.MinimumAccessLevel)
-                .ToList();
-            if (attributes.Count == 0) return NotFound("No Attributes were permitted");
+            var attributes = resource.Attributes.Select(at => at.AttributeColumnName).ToArray();
+            if (attributes.Length == 0) return NotFound("No Attributes were permitted");
 
-            var query = $"SELECT {string.Join(',', attributes.Select(a => a.AttributeColumnName))} FROM {resource.ResourceTableName} WHERE Id=@id";
+            var query = $"SELECT {string.Join(',', attributes)} FROM {resource.ResourceTableName} WHERE Id=@id";
             var connStr = connection.DBConnectionString;
             var idParameter = new SqlParameter("id", resource.ResourceId);
 
