@@ -3,6 +3,7 @@ using ConnectorAPI.DTOs;
 using ConnectorAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConnectorAPI.Controllers
 {
@@ -12,17 +13,22 @@ namespace ConnectorAPI.Controllers
     {
         private readonly ConnectorDbContext _db;
         private readonly ConnectionManagerService _connectionManager;
+        private readonly ILogger<AccessorController> _logger;
 
-        public AccessorController(ConnectorDbContext db, ConnectionManagerService connectionManager)
+        public AccessorController(ConnectorDbContext db, ConnectionManagerService connectionManager, ILogger<AccessorController> logger)
         {
             _db = db;
             _connectionManager = connectionManager;
+            _logger = logger;
         }
 
         [HttpPost]
         public async Task<ActionResult<List<Dictionary<string, string>>>> GetResource([FromBody] AccessRequest accessRequest)
         {
-            var connection = _db.Connections.FirstOrDefault(cn => cn.OwnerNode == accessRequest.OwnerNode && cn.AccessorNode == accessRequest.GuestNode);
+            var connection = _db.Connections
+                .Include(c => c.Resources)
+                    .ThenInclude(r => r.Attributes)
+                .FirstOrDefault(cn => cn.OwnerNode == accessRequest.OwnerNode && cn.AccessorNode == accessRequest.GuestNode);
             if (connection is null) return NotFound("Connection not found");
 
             var resource = connection.Resources

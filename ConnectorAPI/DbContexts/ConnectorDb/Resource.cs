@@ -14,8 +14,8 @@ namespace ConnectorAPI.DbContexts.ConnectorDb
 		public required string ResourceTableName { get; set; }
 
 		public required Guid ConnectionId { get; set; }
-		public virtual required Connection Connection { get; set; }
-		public virtual List<ResourceAttributes> Attributes { get; } = new();
+		public required Connection Connection { get; set; }
+		public required List<ResourceAttributes> Attributes { get; set; } = new();
 	}
 }
 
