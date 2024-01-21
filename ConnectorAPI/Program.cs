@@ -1,4 +1,5 @@
 ﻿using ConnectorAPI.DbContexts;
+using ConnectorAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -26,6 +27,7 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddSingleton<ConnectionManagerService>();
 
         var app = builder.Build();
 
