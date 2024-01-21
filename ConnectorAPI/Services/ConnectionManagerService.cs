@@ -113,7 +113,7 @@ public class ConnectionManagerService
     }
 
 
-    public sealed class ConnectionContainer
+    public sealed class ConnectionContainer : IDisposable
     {
         public required string ConnectionString { get; init; }
         public required SqlConnection Connection { get; init; }
@@ -128,6 +128,11 @@ public class ConnectionManagerService
         public void Free()
         {
             IsOccupied = false;
+        }
+
+        public void Dispose()
+        {
+            Connection.Dispose();
         }
     }
 }
