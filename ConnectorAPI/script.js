@@ -2,13 +2,13 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export const options = {
-  vus: 10000,
+  vus: 100,
   duration: '30s',
 };
 
 
 export default function () {
-  const res = http.post('http://localhost:5048/Accessor',
+  const res = http.post('http://localhost:5000/Accessor',
     JSON.stringify({
       "guestNode": "ms2",
       "ownerNode": "ms1",
