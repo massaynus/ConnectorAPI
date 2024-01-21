@@ -35,11 +35,16 @@ namespace ConnectorAPI.Controllers
             var attributes = resource.Attributes.Select(at => at.AttributeColumnName).ToArray();
             if (attributes.Length == 0) return NotFound("No Attributes were permitted");
 
-            var query = $"SELECT {string.Join(',', attributes)} FROM {resource.ResourceTableName} WHERE Id=@id";
+            var atParams = attributes.Select(a => $"[{a}]");
+            var query = $"SELECT {string.Join(',', atParams)} FROM [{resource.ResourceTableName}] WHERE Id=@rowId";
             var connStr = connection.DBConnectionString;
-            var idParameter = new SqlParameter("id", resource.ResourceId);
 
-            var reader = await _connectionManager.ExecuteReader(connStr, query, idParameter);
+            var parameters = new List<SqlParameter>()
+            {
+                new SqlParameter("rowId", resource.ResourceId),
+            };
+
+            var reader = await _connectionManager.ExecuteReader(connStr, query, parameters.ToArray());
             if (reader is null) return NotFound();
 
             List<Dictionary<string, string>> resultSet = new();
