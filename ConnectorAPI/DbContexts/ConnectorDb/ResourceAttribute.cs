@@ -9,7 +9,7 @@
 		public short MinimumAccessLevel { get; set; }
 
 		public required Guid ResourceId { get; set; }
-		public required Resource Resource { get; set; }
+		public virtual required Resource Resource { get; set; }
 	}
 }
 
