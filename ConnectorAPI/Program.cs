@@ -1,4 +1,5 @@
 ﻿using ConnectorAPI.DbContexts;
+using ConnectorAPI.Repositories;
 using ConnectorAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -28,6 +29,7 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSingleton<ConnectionManagerService>();
+        builder.Services.AddScoped<AccessRepository>();
 
         var app = builder.Build();
 

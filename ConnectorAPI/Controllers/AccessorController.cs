@@ -1,5 +1,6 @@
 ﻿using ConnectorAPI.DbContexts;
 using ConnectorAPI.DTOs;
+using ConnectorAPI.Repositories;
 using ConnectorAPI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -13,22 +14,19 @@ namespace ConnectorAPI.Controllers
     {
         private readonly ConnectorDbContext _db;
         private readonly ConnectionManagerService _connectionManager;
-        private readonly ILogger<AccessorController> _logger;
+        private readonly AccessRepository _accessRepository;
 
-        public AccessorController(ConnectorDbContext db, ConnectionManagerService connectionManager, ILogger<AccessorController> logger)
+        public AccessorController(ConnectorDbContext db, ConnectionManagerService connectionManager, AccessRepository accessRepository)
         {
             _db = db;
             _connectionManager = connectionManager;
-            _logger = logger;
+            _accessRepository = accessRepository;
         }
 
         [HttpPost]
         public async Task<ActionResult<List<Dictionary<string, string>>>> GetResource([FromBody] AccessRequest accessRequest)
         {
-            var connection = _db.Connections
-                .Include(c => c.Resources.Where(r => r.ResourceId == accessRequest.ResourceId && r.ResourceName == accessRequest.ResourceName))
-                    .ThenInclude(r => r.Attributes.Where(at => accessRequest.AccessLevel >= at.MinimumAccessLevel))
-                .FirstOrDefault(cn => cn.OwnerNode == accessRequest.OwnerNode && cn.AccessorNode == accessRequest.GuestNode);
+            var connection = _accessRepository.GetConnection(accessRequest);
             if (connection is null) return NotFound("Connection not found");
 
             var resource = connection.Resources.FirstOrDefault();
