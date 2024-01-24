@@ -2,6 +2,7 @@ using ConnectorAPI.DbContexts;
 using ConnectorAPI.DbContexts.ConnectorDb;
 using ConnectorAPI.DTOs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Data;
 
 namespace ConnectorAPI.Repositories;
@@ -9,6 +10,7 @@ namespace ConnectorAPI.Repositories;
 public class AccessRepository
 {
     private readonly ConnectorDbContext _db;
+    private readonly IMemoryCache _memory;
     private static readonly Func<ConnectorDbContext, string, string, string, string, short, Connection?> GetConnectionQuery =
     EF.CompileQuery(
         (ConnectorDbContext db, string ownerNode, string guestNode, string resourceId, string resourceName, short accessLevel) => db.Connections
@@ -18,9 +20,10 @@ public class AccessRepository
                 .SingleOrDefault()
     );
 
-    public AccessRepository(ConnectorDbContext db)
+    public AccessRepository(ConnectorDbContext db, IMemoryCache memory)
     {
         _db = db;
+        _memory = memory;
     }
 
     public Connection? GetConnection(AccessRequest access)
@@ -30,6 +33,15 @@ public class AccessRepository
 
     public Connection? GetConnection(string ownerNode, string guestNode, string resourceId, string resourceName, short accessLevel)
     {
-        return GetConnectionQuery(_db, ownerNode, guestNode, resourceId, resourceName, accessLevel);
+        string key = string.Join("::", ownerNode, guestNode, resourceId, resourceName, accessLevel);
+
+        return _memory.GetOrCreate(
+            key,
+            (entry) =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                return GetConnectionQuery(_db, ownerNode, guestNode, resourceId, resourceName, accessLevel);
+            }
+        );
     }
 }
