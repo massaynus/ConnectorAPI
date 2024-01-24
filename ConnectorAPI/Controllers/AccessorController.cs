@@ -44,26 +44,8 @@ namespace ConnectorAPI.Controllers
                 new SqlParameter("rowId", resource.ResourceId),
             };
 
-            var reader = await _connectionManager.ExecuteReader(connStr, query, parameters.ToArray());
-            if (reader is null) return NotFound();
-
-            List<Dictionary<string, string>> resultSet = new();
-            while (reader.Read())
-            {
-                var entry = new Dictionary<string, string>();
-                var schema = reader.GetColumnSchema();
-                for (int i = 0; i < schema.Count; i++)
-                {
-                    var column = schema[i];
-                    entry.Add(column.ColumnName, reader.GetValue(i)?.ToString() ?? "null");
-                }
-
-                resultSet.Add(entry);
-
-            }
-            reader.Close();
-
-            return Ok(resultSet);
+            var data = await _connectionManager.ExecuteReader(connStr, query, parameters.ToArray());
+            return Ok(data);
         }
     }
 }

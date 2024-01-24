@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data;
+using ConnectorAPI.Helpers;
 using Microsoft.Data.SqlClient;
 
 namespace ConnectorAPI.Services;
@@ -20,7 +21,7 @@ public class ConnectionManagerService
         _logger.LogInformation("Created with a MAX_POOL_SIZE of {0}", MAX_POOL_SIZE);
     }
 
-    public async Task<SqlDataReader?> ExecuteReader(string connectionString, string commandText, params SqlParameter[] sqlParameters)
+    public async Task<List<Dictionary<string, string>>> ExecuteReader(string connectionString, string commandText, params SqlParameter[] sqlParameters)
     {
         while (IsMaxPoolSizeReached(connectionString))
         {
@@ -28,10 +29,9 @@ public class ConnectionManagerService
             Thread.Sleep(1);
         }
 
-        using var sqlConnection = CreateConnection(connectionString);
+        using SqlConnection sqlConnection = CreateConnection(connectionString);
         using SqlCommand sqlCommand = new(commandText, sqlConnection);
         sqlCommand.Parameters.AddRange(sqlParameters);
-
 
         var reader = await sqlCommand.ExecuteReaderAsync();
 
@@ -39,14 +39,19 @@ public class ConnectionManagerService
             "Got reder for command: {0} and params: {1}\nconnection: {2}",
             commandText, string.Join('\t', sqlParameters.Select(p => $"{p.ParameterName}: {p.Value}")), connectionString);
 
-        return reader;
+        var data = reader.ToRecords();
+
+        return data;
     }
 
     private SqlConnection CreateConnection(string connectionString)
     {
         var connection = new SqlConnection(connectionString);
+        connection.Open();
+
         connection.Disposed += (_, __) => { RemoveConnection(connectionString, connection); };
         AddConnection(connectionString, connection);
+
         return connection;
     }
 
