@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Data;
 using ConnectorAPI.Helpers;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ConnectorAPI.Services;
 
@@ -10,19 +11,24 @@ public class ConnectionManagerService
     private readonly ILogger<ConnectionManagerService> _logger;
     private readonly int MAX_POOL_SIZE;
     private readonly ConcurrentDictionary<string, HashSet<SqlConnection>> _connectionsPool;
+    private readonly IMemoryCache _memoryCache;
 
 
-    public ConnectionManagerService(ILogger<ConnectionManagerService> logger, IConfiguration configuration)
+    public ConnectionManagerService(ILogger<ConnectionManagerService> logger, IConfiguration configuration, IMemoryCache memoryCache)
     {
         _logger = logger;
         _connectionsPool = new();
         MAX_POOL_SIZE = int.Parse(configuration["ConnectionPoolSize"] ?? "20");
 
         _logger.LogInformation("Created with a MAX_POOL_SIZE of {0}", MAX_POOL_SIZE);
+        _memoryCache = memoryCache;
     }
 
     public async Task<List<Dictionary<string, string>>> ExecuteReader(string connectionString, string commandText, params SqlParameter[] sqlParameters)
     {
+        var key = GenerateCacheKey(connectionString, commandText, sqlParameters);
+        if (_memoryCache.TryGetValue(key, out List<Dictionary<string, string>>? result) && result is not null) return result;
+
         while (IsMaxPoolSizeReached(connectionString))
         {
             _logger.LogWarning("MAX_POOL_SIZE reached");
@@ -41,7 +47,16 @@ public class ConnectionManagerService
 
         var data = reader.ToRecords();
 
+        _memoryCache.Set(key, data, TimeSpan.FromMinutes(1));
+
         return data;
+    }
+
+    private string GenerateCacheKey(string connectionString, string commandText, params SqlParameter[] sqlParameters)
+    {
+        string prs = string.Join(',', sqlParameters.Select(p => $"{p.ParameterName}:{p.Value}"));
+
+        return $"{connectionString}#{commandText}#{prs}";
     }
 
     private SqlConnection CreateConnection(string connectionString)
