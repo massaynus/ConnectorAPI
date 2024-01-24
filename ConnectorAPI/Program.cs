@@ -4,6 +4,8 @@ using ConnectorAPI.Services;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
+using ConnectorAPI.DbContexts.ConnectorDb;
 
 internal class Program
 {
@@ -31,6 +33,14 @@ internal class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddSingleton<ConnectionManagerService>();
         builder.Services.AddScoped<AccessRepository>();
+
+        //Auth Section
+        builder.Services.AddAuthentication()
+            .AddBearerToken(IdentityConstants.BearerScheme);
+        builder.Services.AddAuthorizationBuilder();
+        builder.Services.AddIdentityCore<User>()
+            .AddEntityFrameworkStores<ConnectorDbContext>()
+            .AddApiEndpoints();
 
         var app = builder.Build();
 

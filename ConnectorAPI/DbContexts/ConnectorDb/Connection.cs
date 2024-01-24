@@ -14,6 +14,7 @@ namespace ConnectorAPI.DbContexts.ConnectorDb
 		public required string DBConnectionString { get; set; }
 		public required string AccessorNode { get; set; }
 
+		public required User User { get; set; }
 		public List<Resource> Resources { get; set; } = new();
 	}
 }

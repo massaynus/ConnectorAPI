@@ -4,6 +4,7 @@ using ConnectorAPI.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ConnectorAPI.Migrations
 {
     [DbContext(typeof(ConnectorDbContext))]
-    partial class ConnectorDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240124235255_Authentication")]
+    partial class Authentication
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,12 +43,7 @@ namespace ConnectorAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.HasIndex("OwnerNode", "AccessorNode");
 
@@ -309,15 +307,6 @@ namespace ConnectorAPI.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Connection", b =>
-                {
-                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "User")
-                        .WithMany("Connections")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Resource", b =>
                 {
                     b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.Connection", "Connection")
@@ -399,11 +388,6 @@ namespace ConnectorAPI.Migrations
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Resource", b =>
                 {
                     b.Navigation("Attributes");
-                });
-
-            modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.User", b =>
-                {
-                    b.Navigation("Connections");
                 });
 #pragma warning restore 612, 618
         }
