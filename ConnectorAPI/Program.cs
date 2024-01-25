@@ -7,12 +7,19 @@ using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 using ConnectorAPI.DbContexts.ConnectorDb;
 using Microsoft.AspNetCore.HttpLogging;
+using Serilog;
 
 internal class Program
 {
     private static void Main(string[] args)
     {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.File("logs/logFile.log", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
         var builder = WebApplication.CreateBuilder(args);
+        builder.Host.UseSerilog();
 
         // Add services to the container.
         builder.Services.AddMemoryCache();
@@ -39,9 +46,9 @@ internal class Program
             options.CombineLogs = true;
             options.LoggingFields = HttpLoggingFields.RequestMethod
                                     | HttpLoggingFields.RequestPath
-                                    | HttpLoggingFields.Duration
                                     | HttpLoggingFields.RequestQuery
-                                    | HttpLoggingFields.ResponseStatusCode;
+                                    | HttpLoggingFields.ResponseStatusCode
+                                    | HttpLoggingFields.Duration;
         });
 
         //Auth Section
@@ -76,6 +83,17 @@ internal class Program
         app.MapControllers()
             .RequireAuthorization();
 
-        app.Run();
+        try
+        {
+            app.Run();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application terminated unexpectedly");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 }
