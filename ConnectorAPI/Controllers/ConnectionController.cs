@@ -34,16 +34,17 @@ public class ConnectionConroller : ControllerBase
     {
         var userId = _userManager.GetUserId(HttpContext.User);
 
-        return _db.Connections.Where(c => c.User.Id == userId).AsNoTracking().ToList();
+        return _db.Connections.Where(c => c.Owner.Id == userId).AsNoTracking().ToList();
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Connection>> GetConnection(Guid id)
     {
         var userId = _userManager.GetUserId(HttpContext.User);
+        var userName = _userManager.GetUserName(HttpContext.User);
 
         var connection = await _db.Connections
-            .Where(c => c.User.Id == userId && c.Id == id)
+            .Where(c => c.Owner.Id == userId && c.Id == id)
             .AsNoTracking()
             .FirstOrDefaultAsync();
 
@@ -60,8 +61,10 @@ public class ConnectionConroller : ControllerBase
     {
         var user = await _userManager.GetUserAsync(HttpContext.User);
 
+        if (!_db.Set<User>().Any(u => u.Id == connectionRequest.GuestUserId)) return NotFound("Invited Was Guest Not Found!");
+
         var connection = _mapper.Map<Connection>(connectionRequest);
-        connection.User = user!;
+        connection.Owner = user!;
 
         _db.Connections.Add(connection);
         _db.SaveChanges();
@@ -75,12 +78,12 @@ public class ConnectionConroller : ControllerBase
         var userId = _userManager.GetUserId(HttpContext.User);
 
         var connection = await _db.Connections
-            .Include(c => c.User)
+            .Include(c => c.Owner)
             .AsSingleQuery()
             .SingleOrDefaultAsync(cn => cn.Id == id);
 
         if (connection is null) return NotFound();
-        else if (connection.User.Id != userId) return Forbid();
+        else if (connection.Owner.Id != userId) return Forbid();
         else
         {
             _db.Connections.Remove(connection);
