@@ -1,7 +1,9 @@
 ﻿using ConnectorAPI.DbContexts;
+using ConnectorAPI.DbContexts.ConnectorDb;
 using ConnectorAPI.DTOs;
 using ConnectorAPI.Repositories;
 using ConnectorAPI.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -12,21 +14,26 @@ namespace ConnectorAPI.Controllers
     [Route("[controller]")]
     public class AccessorController : ControllerBase
     {
-        private readonly ConnectorDbContext _db;
         private readonly ConnectionManagerService _connectionManager;
         private readonly AccessRepository _accessRepository;
+        private readonly UserManager<User> _userManager;
 
-        public AccessorController(ConnectorDbContext db, ConnectionManagerService connectionManager, AccessRepository accessRepository)
+        public AccessorController(ConnectionManagerService connectionManager,
+                                  AccessRepository accessRepository,
+                                  UserManager<User> userManager)
         {
-            _db = db;
             _connectionManager = connectionManager;
             _accessRepository = accessRepository;
+            _userManager = userManager;
         }
 
         [HttpPost]
         public async Task<ActionResult<List<Dictionary<string, string>>>> GetResource([FromBody] AccessRequest accessRequest)
         {
-            var connection = _accessRepository.GetConnection(accessRequest);
+            var guestId = _userManager.GetUserId(HttpContext.User);
+            if (guestId is null) return Unauthorized();
+
+            var connection = _accessRepository.GetConnection(guestId, accessRequest);
             if (connection is null) return NotFound("Connection not found");
 
             var resource = connection.Resources.FirstOrDefault();

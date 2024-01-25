@@ -15,9 +15,9 @@ public class AccessRepository
 
     private static readonly Func<ConnectorDbContext, string, string, string, string, short, Connection?> GetConnectionQuery =
     EF.CompileQuery(
-        (ConnectorDbContext db, string ownerNode, string guestNode, string resourceId, string resourceName, short accessLevel) => db
+        (ConnectorDbContext db, string ownerId, string guestId, string resourceId, string resourceName, short accessLevel) => db
                 .Connections
-                .Where(cn => cn.OwnerNode == ownerNode && cn.AccessorNode == guestNode)
+                .Where(cn => cn.OwnerId == ownerId && cn.GuestId == guestId)
                 .Include(c => c.Resources.Where(r => r.ResourceId == resourceId && r.ResourceName == resourceName))
                     .ThenInclude(r => r.Attributes.Where(at => accessLevel >= at.MinimumAccessLevel))
                 .AsSingleQuery()
@@ -32,14 +32,14 @@ public class AccessRepository
         _logger = logger;
     }
 
-    public Connection? GetConnection(AccessRequest access)
+    public Connection? GetConnection(string guestId, AccessRequest access)
     {
-        return GetConnection(access.OwnerNode, access.GuestNode, access.ResourceId, access.ResourceName, access.AccessLevel);
+        return GetConnection(access.OwnerId, guestId, access.ResourceId, access.ResourceName, access.AccessLevel);
     }
 
-    public Connection? GetConnection(string ownerNode, string guestNode, string resourceId, string resourceName, short accessLevel)
+    public Connection? GetConnection(string ownerId, string guestId, string resourceId, string resourceName, short accessLevel)
     {
-        string key = string.Join("::", ownerNode, guestNode, resourceName, accessLevel);
+        string key = string.Join("::", ownerId, guestId, resourceName, accessLevel);
 
         return _memory.GetOrCreate(
             key,
@@ -48,7 +48,7 @@ public class AccessRepository
                 _logger.LogInformation("Cache miss for key {0}", key);
 
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-                return GetConnectionQuery(_db, ownerNode, guestNode, resourceId, resourceName, accessLevel);
+                return GetConnectionQuery(_db, ownerId, guestId, resourceId, resourceName, accessLevel);
             }
         );
     }
