@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Options;
 
+using LoginRequest = ConnectorAPI.DTOs.LoginRequest;
+
 namespace ConnectorAPI.Extensions;
 
 /// <summary>
@@ -85,7 +87,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             var isPersistent = (useCookies == true) && (useSessionCookies != true);
             signInManager.AuthenticationScheme = useCookieScheme ? IdentityConstants.ApplicationScheme : IdentityConstants.BearerScheme;
 
-            var result = await signInManager.PasswordSignInAsync(login.Email, login.Password, isPersistent, lockoutOnFailure: true);
+            var result = await signInManager.PasswordSignInAsync(login.Username, login.Password, isPersistent, lockoutOnFailure: true);
 
             if (!result.Succeeded)
             {

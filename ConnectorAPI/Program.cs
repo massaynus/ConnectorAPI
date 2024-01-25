@@ -58,6 +58,8 @@ internal class Program
         builder.Services.AddAuthorizationBuilder();
         builder.Services.AddIdentityCore<User>(options =>
         {
+            options.User.RequireUniqueEmail = true;
+
             options.SignIn.RequireConfirmedPhoneNumber = false;
             options.SignIn.RequireConfirmedAccount = false;
             options.SignIn.RequireConfirmedEmail = false;
