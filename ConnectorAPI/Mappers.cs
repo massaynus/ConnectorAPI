@@ -11,6 +11,8 @@ namespace ConnectorAPI
 			CreateMap<CreateConnectionRequest, Connection>();
 			CreateMap<CreateResourceRequest, Resource>();
 			CreateMap<CreateResourceAttributes, ResourceAttributes>();
+
+			CreateMap<Connection, ConnectionDTO>();
 		}
 	}
 }

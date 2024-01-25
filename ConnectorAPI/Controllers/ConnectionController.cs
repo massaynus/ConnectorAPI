@@ -30,21 +30,23 @@ public class ConnectionConroller : ControllerBase
     }
 
     [HttpGet(Name = "GetAllConnections")]
-    public ActionResult<IEnumerable<Connection>> Get()
+    public ActionResult<IEnumerable<ConnectionDTO>> Get()
     {
         var userId = _userManager.GetUserId(HttpContext.User);
 
-        return _db.Connections.Where(c => c.Owner.Id == userId).AsNoTracking().ToList();
+        var connections = _db.Connections.Where(c => c.OwnerId == userId || c.GuestId == userId).AsNoTracking();
+
+        return _mapper.ProjectTo<ConnectionDTO>(connections).ToList();
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Connection>> GetConnection(Guid id)
+    public async Task<ActionResult<ConnectionDTO>> GetConnection(Guid id)
     {
         var userId = _userManager.GetUserId(HttpContext.User);
         var userName = _userManager.GetUserName(HttpContext.User);
 
         var connection = await _db.Connections
-            .Where(c => c.Owner.Id == userId && c.Id == id)
+            .Where(c => (c.OwnerId == userId || c.GuestId == userId) && c.Id == id)
             .AsNoTracking()
             .FirstOrDefaultAsync();
 
@@ -53,18 +55,23 @@ public class ConnectionConroller : ControllerBase
             return NotFound();
         }
 
-        return Ok(connection);
+        return Ok(
+            _mapper.Map<ConnectionDTO>(connection)
+        );
     }
 
     [HttpPost(Name = "CreateConnection")]
     public async Task<ActionResult<Connection>> Create([FromBody] CreateConnectionRequest connectionRequest)
     {
         var user = await _userManager.GetUserAsync(HttpContext.User);
+        var guest = _db.Set<User>().SingleOrDefault(u => u.NormalizedUserName == _userManager.NormalizeName(connectionRequest.GuestUserName));
 
-        if (!_db.Set<User>().Any(u => u.Id == connectionRequest.GuestUserId)) return NotFound("Invited Was Guest Not Found!");
+        if (guest is null)
+            return NotFound("Invited Was Guest Not Found!");
 
         var connection = _mapper.Map<Connection>(connectionRequest);
         connection.Owner = user!;
+        connection.Guest = guest;
 
         _db.Connections.Add(connection);
         _db.SaveChanges();
