@@ -2,7 +2,9 @@
 using ConnectorAPI.DbContexts;
 using ConnectorAPI.DbContexts.ConnectorDb;
 using ConnectorAPI.DTOs;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConnectorAPI.Controllers;
 
@@ -13,28 +15,37 @@ public class ConnectionConroller : ControllerBase
     private readonly ILogger<ConnectionConroller> _logger;
     private readonly ConnectorDbContext _db;
     private readonly IMapper _mapper;
+    private readonly UserManager<User> _userManager;
 
     public ConnectionConroller(
     ILogger<ConnectionConroller> logger,
-    ConnectorDbContext db
-,
-    IMapper mapper)
+    ConnectorDbContext db,
+    IMapper mapper,
+    UserManager<User> userManager)
     {
         _logger = logger;
         _db = db;
         _mapper = mapper;
+        _userManager = userManager;
     }
 
     [HttpGet(Name = "GetAllConnections")]
-    public IEnumerable<Connection> Get()
+    public ActionResult<IEnumerable<Connection>> Get()
     {
-        return _db.Connections.ToList();
+        var userId = _userManager.GetUserId(HttpContext.User);
+
+        return _db.Connections.Where(c => c.User.Id == userId).AsNoTracking().ToList();
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Resource>> GetConnection(Guid id)
+    public async Task<ActionResult<Connection>> GetConnection(Guid id)
     {
-        var connection = await _db.Connections.FindAsync(id);
+        var userId = _userManager.GetUserId(HttpContext.User);
+
+        var connection = await _db.Connections
+            .Where(c => c.User.Id == userId && c.Id == id)
+            .AsNoTracking()
+            .FirstOrDefaultAsync();
 
         if (connection == null)
         {
@@ -45,9 +56,13 @@ public class ConnectionConroller : ControllerBase
     }
 
     [HttpPost(Name = "CreateConnection")]
-    public ActionResult<Connection> Create([FromBody] CreateConnectionRequest connectionRequest)
+    public async Task<ActionResult<Connection>> Create([FromBody] CreateConnectionRequest connectionRequest)
     {
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+
         var connection = _mapper.Map<Connection>(connectionRequest);
+        connection.User = user!;
+
         _db.Connections.Add(connection);
         _db.SaveChanges();
 
@@ -55,14 +70,21 @@ public class ConnectionConroller : ControllerBase
     }
 
     [HttpDelete("{id}", Name = "DeleteConnection")]
-    public IActionResult Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var connection = _db.Connections.SingleOrDefault(cn => cn.Id == id);
+        var userId = _userManager.GetUserId(HttpContext.User);
+
+        var connection = await _db.Connections
+            .Include(c => c.User)
+            .AsSingleQuery()
+            .SingleOrDefaultAsync(cn => cn.Id == id);
+
         if (connection is null) return NotFound();
+        else if (connection.User.Id != userId) return Forbid();
         else
         {
             _db.Connections.Remove(connection);
-            _db.SaveChanges();
+            await _db.SaveChangesAsync();
             return Ok();
         }
     }
