@@ -13,7 +13,7 @@ namespace ConnectorAPI.DbContexts.ConnectorDb
 		public required string ResourceName { get; set; }
 		public required string ResourceTableName { get; set; }
 
-		public required Guid ConnectionId { get; set; }
+		public required User Owner { get; set; }
 		public required Connection Connection { get; set; }
 		public required List<ResourceAttributes> Attributes { get; set; } = new();
 	}

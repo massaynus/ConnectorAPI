@@ -15,6 +15,20 @@ namespace ConnectorAPI.DbContexts
 		{
 
 		}
+
+		protected override void OnModelCreating(ModelBuilder builder)
+		{
+			base.OnModelCreating(builder);
+
+			builder.Entity<Connection>()
+				.HasOne(c => c.Owner)
+				.WithMany(u => u.Connections);
+
+			builder.Entity<Connection>()
+				.HasOne(c => c.Guest)
+				.WithMany(u => u.GuestConnections)
+				.OnDelete(DeleteBehavior.NoAction);
+		}
 	}
 }
 

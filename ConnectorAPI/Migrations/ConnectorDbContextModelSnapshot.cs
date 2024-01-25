@@ -28,26 +28,23 @@ namespace ConnectorAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AccessorNode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("DBConnectionString")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("OwnerNode")
+                    b.Property<string>("GuestId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("UserId")
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("GuestId");
 
-                    b.HasIndex("OwnerNode", "AccessorNode");
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Connections");
                 });
@@ -60,6 +57,9 @@ namespace ConnectorAPI.Migrations
 
                     b.Property<Guid>("ConnectionId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OwnerId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ResourceId")
                         .IsRequired()
@@ -76,6 +76,8 @@ namespace ConnectorAPI.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ConnectionId");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("ResourceId");
 
@@ -101,10 +103,15 @@ namespace ConnectorAPI.Migrations
                     b.Property<short>("MinimumAccessLevel")
                         .HasColumnType("smallint");
 
+                    b.Property<string>("OwnerId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<Guid>("ResourceId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
 
                     b.HasIndex("ResourceId");
 
@@ -311,11 +318,21 @@ namespace ConnectorAPI.Migrations
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Connection", b =>
                 {
-                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "User")
-                        .WithMany("Connections")
-                        .HasForeignKey("UserId");
+                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "Guest")
+                        .WithMany("GuestConnections")
+                        .HasForeignKey("GuestId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
 
-                    b.Navigation("User");
+                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "Owner")
+                        .WithMany("Connections")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Guest");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.Resource", b =>
@@ -326,16 +343,28 @@ namespace ConnectorAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "Owner")
+                        .WithMany("Resources")
+                        .HasForeignKey("OwnerId");
+
                     b.Navigation("Connection");
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.ResourceAttributes", b =>
                 {
+                    b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.User", "Owner")
+                        .WithMany("Attributes")
+                        .HasForeignKey("OwnerId");
+
                     b.HasOne("ConnectorAPI.DbContexts.ConnectorDb.Resource", "Resource")
                         .WithMany("Attributes")
                         .HasForeignKey("ResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Owner");
 
                     b.Navigation("Resource");
                 });
@@ -403,7 +432,13 @@ namespace ConnectorAPI.Migrations
 
             modelBuilder.Entity("ConnectorAPI.DbContexts.ConnectorDb.User", b =>
                 {
+                    b.Navigation("Attributes");
+
                     b.Navigation("Connections");
+
+                    b.Navigation("GuestConnections");
+
+                    b.Navigation("Resources");
                 });
 #pragma warning restore 612, 618
         }
