@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.Options;
 
+using InfoResponse = ConnectorAPI.DTOs.InfoResponse;
 using LoginRequest = ConnectorAPI.DTOs.LoginRequest;
 
 namespace ConnectorAPI.Extensions;
@@ -129,7 +130,14 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 return TypedResults.NotFound();
             }
 
-            return TypedResults.Ok(await CreateInfoResponseAsync(user, userManager));
+
+
+            return TypedResults.Ok(
+                new InfoResponse
+                {
+                    Claims = claimsPrincipal.Claims.Select(c => new ClaimDTO(c.Type, c.Value)).ToList()
+                }
+            );
         });
 
         return new IdentityEndpointsConventionBuilder(routeGroup);
@@ -166,16 +174,6 @@ public static class IdentityApiEndpointRouteBuilderExtensions
         }
 
         return TypedResults.ValidationProblem(errorDictionary);
-    }
-
-    private static async Task<InfoResponse> CreateInfoResponseAsync<TUser>(TUser user, UserManager<TUser> userManager)
-        where TUser : class
-    {
-        return new()
-        {
-            Email = await userManager.GetEmailAsync(user) ?? throw new NotSupportedException("Users must have an email."),
-            IsEmailConfirmed = await userManager.IsEmailConfirmedAsync(user),
-        };
     }
 
     // Wrap RouteGroupBuilder with a non-public type to avoid a potential future behavioral breaking change.
