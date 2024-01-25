@@ -38,7 +38,11 @@ internal class Program
         builder.Services.AddAuthentication()
             .AddBearerToken(IdentityConstants.BearerScheme);
         builder.Services.AddAuthorizationBuilder();
-        builder.Services.AddIdentityCore<User>()
+        builder.Services.AddIdentityCore<User>(options => {
+            options.SignIn.RequireConfirmedPhoneNumber = false;
+            options.SignIn.RequireConfirmedAccount = false;
+            options.SignIn.RequireConfirmedEmail = false;
+        })
             .AddEntityFrameworkStores<ConnectorDbContext>()
             .AddApiEndpoints();
 
@@ -53,9 +57,11 @@ internal class Program
 
         app.UseHttpsRedirection();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapControllers();
+        app.MapIdentityApi<User>();
+        app.MapControllers().RequireAuthorization();
 
         app.Run();
     }
