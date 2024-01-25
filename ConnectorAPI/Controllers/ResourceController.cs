@@ -38,12 +38,10 @@ namespace ConnectorAPI.Controllers
         public async Task<ActionResult<Resource>> GetResource(Guid id)
         {
             var userId = _userManager.GetUserId(HttpContext.User);
-            var resource = await _context.Resources.Include(r => r.Owner).AsNoTracking().SingleOrDefaultAsync(r => r.Id == id);
+            var resource = await _context.Resources.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id && r.Owner.Id == userId);
 
             if (resource == null)
                 return NotFound();
-            else if (resource.Owner.Id != userId)
-                return Forbid();
 
             return resource;
         }
@@ -71,12 +69,10 @@ namespace ConnectorAPI.Controllers
         public async Task<IActionResult> DeleteResource(Guid id)
         {
             var userId = _userManager.GetUserId(HttpContext.User);
-            var resource = await _context.Resources.Include(r => r.Owner).SingleOrDefaultAsync(r => r.Id == id);
+            var resource = await _context.Resources.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id && r.Owner.Id == userId);
 
             if (resource == null)
                 return NotFound();
-            else if (resource.Owner.Id != userId)
-                return Forbid();
 
             _context.Resources.Remove(resource);
             await _context.SaveChangesAsync();
