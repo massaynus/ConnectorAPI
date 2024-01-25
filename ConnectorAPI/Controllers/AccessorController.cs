@@ -1,12 +1,10 @@
-﻿using ConnectorAPI.DbContexts;
-using ConnectorAPI.DbContexts.ConnectorDb;
+﻿using ConnectorAPI.DbContexts.ConnectorDb;
 using ConnectorAPI.DTOs;
 using ConnectorAPI.Repositories;
 using ConnectorAPI.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 
 namespace ConnectorAPI.Controllers
 {

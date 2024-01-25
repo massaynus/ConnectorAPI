@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Identity;
 using ConnectorAPI.DbContexts.ConnectorDb;
+using Microsoft.AspNetCore.HttpLogging;
 
 internal class Program
 {
@@ -33,12 +34,22 @@ internal class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddSingleton<ConnectionManagerService>();
         builder.Services.AddScoped<AccessRepository>();
+        builder.Services.AddHttpLogging(options =>
+        {
+            options.CombineLogs = true;
+            options.LoggingFields = HttpLoggingFields.RequestMethod
+                                    | HttpLoggingFields.RequestPath
+                                    | HttpLoggingFields.Duration
+                                    | HttpLoggingFields.RequestQuery
+                                    | HttpLoggingFields.ResponseStatusCode;
+        });
 
         //Auth Section
         builder.Services.AddAuthentication()
             .AddBearerToken(IdentityConstants.BearerScheme);
         builder.Services.AddAuthorizationBuilder();
-        builder.Services.AddIdentityCore<User>(options => {
+        builder.Services.AddIdentityCore<User>(options =>
+        {
             options.SignIn.RequireConfirmedPhoneNumber = false;
             options.SignIn.RequireConfirmedAccount = false;
             options.SignIn.RequireConfirmedEmail = false;
@@ -47,6 +58,7 @@ internal class Program
             .AddApiEndpoints();
 
         var app = builder.Build();
+        app.UseHttpLogging();
 
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
@@ -61,7 +73,8 @@ internal class Program
         app.UseAuthorization();
 
         app.MapIdentityApi<User>();
-        app.MapControllers().RequireAuthorization();
+        app.MapControllers()
+            .RequireAuthorization();
 
         app.Run();
     }
