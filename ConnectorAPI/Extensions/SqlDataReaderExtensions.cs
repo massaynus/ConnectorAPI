@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 
-namespace ConnectorAPI.Helpers;
+namespace ConnectorAPI.Extensions;
 
 public static class SqlDataReaderExtensions
 {

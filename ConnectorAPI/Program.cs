@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using ConnectorAPI.DbContexts.ConnectorDb;
 using Microsoft.AspNetCore.HttpLogging;
 using Serilog;
+using ConnectorAPI.Extensions;
 
 internal class Program
 {
@@ -79,7 +80,7 @@ internal class Program
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapIdentityApi<User>();
+        app.MapCustomIdentityApi<User>();
         app.MapControllers()
             .RequireAuthorization();
 

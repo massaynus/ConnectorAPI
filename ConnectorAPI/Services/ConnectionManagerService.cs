@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data;
-using ConnectorAPI.Helpers;
+using ConnectorAPI.Extensions;
 using Microsoft.Data.SqlClient;
 
 namespace ConnectorAPI.Services;
