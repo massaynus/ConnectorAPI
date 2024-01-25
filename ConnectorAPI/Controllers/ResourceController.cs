@@ -4,6 +4,7 @@ using ConnectorAPI.DbContexts;
 using ConnectorAPI.DbContexts.ConnectorDb;
 using ConnectorAPI.DTOs;
 using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 
 namespace ConnectorAPI.Controllers
 {
@@ -13,28 +14,36 @@ namespace ConnectorAPI.Controllers
     {
         private readonly ConnectorDbContext _context;
         private readonly IMapper _mapper;
+        private readonly UserManager<User> _userManager;
 
-        public ResourceController(ConnectorDbContext context, IMapper mapper)
+        public ResourceController(ConnectorDbContext context, IMapper mapper, UserManager<User> userManager)
         {
             _context = context;
             _mapper = mapper;
+            _userManager = userManager;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Resource>>> GetResources()
         {
-            return await _context.Resources.ToListAsync();
+            var userId = _userManager.GetUserId(HttpContext.User);
+
+            return await _context.Resources
+                .Where(r => r.Owner.Id == userId)
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         [HttpGet("{id}", Name = nameof(GetResource))]
         public async Task<ActionResult<Resource>> GetResource(Guid id)
         {
-            var resource = await _context.Resources.FindAsync(id);
+            var userId = _userManager.GetUserId(HttpContext.User);
+            var resource = await _context.Resources.Include(r => r.Owner).AsNoTracking().SingleOrDefaultAsync(r => r.Id == id);
 
             if (resource == null)
-            {
                 return NotFound();
-            }
+            else if (resource.Owner.Id != userId)
+                return Forbid();
 
             return resource;
         }
@@ -42,10 +51,16 @@ namespace ConnectorAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Resource>> PostResource(CreateResourceRequest createResource)
         {
-            var connection = _context.Connections.Find(createResource.ConnectionId);
+            var user = await _userManager.GetUserAsync(HttpContext.User);
+            var userId = _userManager.GetUserId(HttpContext.User);
+
+            if (user is null) return Unauthorized();
+
+            var connection = _context.Connections.Where(c => c.OwnerId == userId && c.Id == createResource.ConnectionId).SingleOrDefault();
             if (connection is null) return BadRequest(new { Message = "Can't create resource for non existing connection" });
 
             var resource = _mapper.Map<Resource>(createResource);
+            resource.Owner = user;
             _context.Resources.Add(resource);
             await _context.SaveChangesAsync();
 
@@ -55,11 +70,13 @@ namespace ConnectorAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteResource(Guid id)
         {
-            var resource = await _context.Resources.FindAsync(id);
+            var userId = _userManager.GetUserId(HttpContext.User);
+            var resource = await _context.Resources.Include(r => r.Owner).SingleOrDefaultAsync(r => r.Id == id);
+
             if (resource == null)
-            {
                 return NotFound();
-            }
+            else if (resource.Owner.Id != userId)
+                return Forbid();
 
             _context.Resources.Remove(resource);
             await _context.SaveChangesAsync();
