@@ -1,7 +1,11 @@
-﻿using ConnectorAPI.DTOs;
+﻿using ConnectorAPI.DbContexts;
+using ConnectorAPI.DbContexts.ConnectorDb;
+using ConnectorAPI.DTOs;
 using ConnectorAPI.Service;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace ConnectorAPI.Controllers;
 
@@ -12,11 +16,15 @@ public class TokenizerController : ControllerBase
 {
     private readonly TokenizerService _tokenizer;
     private readonly CryptoService _cryptoService;
+    private readonly UserManager<User> _userManager;
+    private readonly ConnectorDbContext _db;
 
-    public TokenizerController(TokenizerService tokenizer, CryptoService cryptoService)
+    public TokenizerController(TokenizerService tokenizer, CryptoService cryptoService, UserManager<User> userManager, ConnectorDbContext db)
     {
         _tokenizer = tokenizer;
         _cryptoService = cryptoService;
+        _userManager = userManager;
+        _db = db;
     }
 
     [HttpGet(nameof(GetPublicKeys))]
@@ -42,6 +50,21 @@ public class TokenizerController : ControllerBase
 
         return $"Encrypted: {encrypted}\nDecrypted:{decrypted}";
 
+    }
+
+    [Authorize]
+    [HttpPatch(nameof(SetRSAPublicKey))]
+    public async Task<ActionResult> SetRSAPublicKey([FromBody] string pubKey)
+    {
+        var user = await _userManager.GetUserAsync(HttpContext.User);
+        if (user is null) return Forbid();
+
+        _db.Attach(user);
+        user.RSAPublicKey = pubKey;
+
+        await _db.SaveChangesAsync();
+
+        return Ok();
     }
 
 }

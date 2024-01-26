@@ -11,6 +11,7 @@ using Serilog;
 using ConnectorAPI.Extensions;
 using ConnectorAPI;
 using ConnectorAPI.Service;
+using System.Net;
 
 internal class Program
 {
@@ -42,9 +43,12 @@ internal class Program
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
         builder.Services.AddSingleton<ConnectionManagerService>();
         builder.Services.AddSingleton<TokenStorageService>();
         builder.Services.AddSingleton<CryptoService>();
+        builder.Services.AddSingleton<UserIPStorageService>();
+
         builder.Services.AddScoped<AccessRepository>();
         builder.Services.AddScoped<TokenizerService>();
         builder.Services.AddHttpLogging(options =>
@@ -86,6 +90,32 @@ internal class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.Use(async (HttpContext context, RequestDelegate req) =>
+        {
+            var isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
+            if (!isAuthenticated)
+            {
+                await req.Invoke(context);
+                return;
+            }
+
+            var scp = app.Services.CreateScope();
+            var ipStorageService = scp.ServiceProvider.GetRequiredService<UserIPStorageService>();
+            var userManager = scp.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+            var username = userManager.GetUserName(context.User);
+            if (username is null) context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+            else
+            {
+                var reqIp = context.Connection.RemoteIpAddress?.ToString();
+                var uIp = ipStorageService.GetIP(username);
+
+                if (reqIp != uIp) context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                else await req.Invoke(context);
+            }
+
+        });
 
         app.MapCustomIdentityApi<User>();
         app.MapControllers()

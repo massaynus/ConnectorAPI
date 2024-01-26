@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Security.Claims;
 using ConnectorAPI.DTOs;
+using ConnectorAPI.Services;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Http.Metadata;
@@ -80,15 +81,24 @@ public static class IdentityApiEndpointRouteBuilderExtensions
         });
 
         routeGroup.MapPost("/login", async Task<Results<Ok<AccessTokenResponse>, EmptyHttpResult, ProblemHttpResult>>
-            ([FromBody] LoginRequest login, [FromQuery] bool? useCookies, [FromQuery] bool? useSessionCookies, [FromServices] IServiceProvider sp) =>
+            ([FromBody] LoginRequest login,
+             [FromQuery] bool? useCookies,
+             [FromQuery] bool? useSessionCookies,
+             [FromServices] IServiceProvider sp,
+             HttpContext context) =>
         {
             var signInManager = sp.GetRequiredService<SignInManager<TUser>>();
+            var userIpStorage = sp.GetRequiredService<UserIPStorageService>();
 
             var useCookieScheme = (useCookies == true) || (useSessionCookies == true);
             var isPersistent = (useCookies == true) && (useSessionCookies != true);
             signInManager.AuthenticationScheme = useCookieScheme ? IdentityConstants.ApplicationScheme : IdentityConstants.BearerScheme;
 
             var result = await signInManager.PasswordSignInAsync(login.Username, login.Password, isPersistent, lockoutOnFailure: true);
+
+            var remoteAddr = context.Connection.RemoteIpAddress?.ToString();
+            if (remoteAddr is not null)
+                userIpStorage.RegisterIP(login.Username, remoteAddr);
 
             if (!result.Succeeded)
             {
@@ -125,17 +135,23 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             (ClaimsPrincipal claimsPrincipal, [FromServices] IServiceProvider sp) =>
         {
             var userManager = sp.GetRequiredService<UserManager<TUser>>();
+            var userIpStorage = sp.GetRequiredService<UserIPStorageService>();
+
             if (await userManager.GetUserAsync(claimsPrincipal) is not { } user)
             {
                 return TypedResults.NotFound();
             }
 
+            var username = userManager.GetUserName(claimsPrincipal);
+            string ip = "N/A";
 
+            if (username is not null) ip = userIpStorage.GetIP(username);
 
             return TypedResults.Ok(
                 new InfoResponse
                 {
-                    Claims = claimsPrincipal.Claims.Select(c => new ClaimDTO(c.Type, c.Value)).ToList()
+                    Claims = claimsPrincipal.Claims.Select(c => new ClaimDTO(c.Type, c.Value)).ToList(),
+                    RegistredIPAdress = ip
                 }
             );
         });
