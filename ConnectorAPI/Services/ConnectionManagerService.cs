@@ -41,8 +41,8 @@ public class ConnectionManagerService
         var reader = await sqlCommand.ExecuteReaderAsync();
 
         _logger.LogInformation(
-            "Got reder for command: {0} and params: {1}",
-            commandText, string.Join('\t', sqlParameters.Select(p => $"{p.ParameterName}: {p.Value}")));
+            "\nGot reader for command: {0} and params: {1}",
+            commandText, string.Join("\n\t", sqlParameters.Select(p => $"{p.ParameterName}: {p.Value}")));
 
         return reader.ToRecords();
     }
