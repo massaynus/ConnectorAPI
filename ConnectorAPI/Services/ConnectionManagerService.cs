@@ -33,11 +33,16 @@ public class ConnectionManagerService
         using SqlCommand sqlCommand = new(commandText, sqlConnection);
         sqlCommand.Parameters.AddRange(sqlParameters);
 
+        _logger.LogInformation(
+            "Executing Query: {0}",
+            commandText
+        );
+
         var reader = await sqlCommand.ExecuteReaderAsync();
 
-        _logger.LogDebug(
-            "Got reder for command: {0} and params: {1}\nconnection: {2}",
-            commandText, string.Join('\t', sqlParameters.Select(p => $"{p.ParameterName}: {p.Value}")), connectionString);
+        _logger.LogInformation(
+            "Got reder for command: {0} and params: {1}",
+            commandText, string.Join('\t', sqlParameters.Select(p => $"{p.ParameterName}: {p.Value}")));
 
         return reader.ToRecords();
     }

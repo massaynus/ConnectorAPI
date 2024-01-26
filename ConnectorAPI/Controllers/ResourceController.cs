@@ -59,6 +59,7 @@ namespace ConnectorAPI.Controllers
 
             var resource = _mapper.Map<Resource>(createResource);
             resource.Owner = user;
+            resource.Connection = connection;
             _context.Resources.Add(resource);
             await _context.SaveChangesAsync();
 

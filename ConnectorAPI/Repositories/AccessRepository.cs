@@ -32,9 +32,14 @@ public class AccessRepository
         _logger = logger;
     }
 
-    public Connection? GetConnection(string guestId, AccessRequest access)
+    public Connection? GetConnection(string guestId, AccessRequest request)
     {
-        return GetConnection(access.OwnerId, guestId, access.ResourceId, access.ResourceName, access.AccessLevel);
+        return GetConnection(request.OwnerId, guestId, request.ResourceId, request.ResourceName, request.AccessLevel);
+    }
+
+    public Connection? GetConnection(string guestId, UpdateRequest request)
+    {
+        return GetConnection(request.OwnerId, guestId, request.ResourceId, request.ResourceName, request.AccessLevel);
     }
 
     public Connection? GetConnection(string ownerId, string guestId, string resourceId, string resourceName, short accessLevel)
