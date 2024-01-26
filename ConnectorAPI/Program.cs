@@ -9,6 +9,8 @@ using ConnectorAPI.DbContexts.ConnectorDb;
 using Microsoft.AspNetCore.HttpLogging;
 using Serilog;
 using ConnectorAPI.Extensions;
+using ConnectorAPI;
+using ConnectorAPI.Service;
 
 internal class Program
 {
@@ -41,7 +43,10 @@ internal class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSingleton<ConnectionManagerService>();
+        builder.Services.AddSingleton<TokenStorageService>();
+        builder.Services.AddSingleton<CryptoService>();
         builder.Services.AddScoped<AccessRepository>();
+        builder.Services.AddScoped<TokenizerService>();
         builder.Services.AddHttpLogging(options =>
         {
             options.CombineLogs = true;
