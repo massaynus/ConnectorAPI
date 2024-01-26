@@ -66,6 +66,8 @@ public class ConnectionConroller : ControllerBase
         var user = await _userManager.GetUserAsync(HttpContext.User);
         var guest = _db.Set<User>().SingleOrDefault(u => u.NormalizedUserName == _userManager.NormalizeName(connectionRequest.GuestUserName));
 
+        if (_db.Connections.Any(c => c.Owner == user && c.Guest == guest)) return Conflict("Connection between accounts already exists!");
+
         if (guest is null)
             return NotFound("Invited Was Guest Not Found!");
 
