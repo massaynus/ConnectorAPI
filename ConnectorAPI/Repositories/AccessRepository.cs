@@ -44,7 +44,7 @@ public class AccessRepository
 
     public Connection? GetConnection(string ownerId, string guestId, string resourceId, string resourceName, short accessLevel)
     {
-        string key = string.Join("::", ownerId, guestId, resourceName, accessLevel);
+        string key = string.Join("::", ownerId, guestId, resourceId, resourceName, accessLevel);
 
         return _memory.GetOrCreate(
             key,
