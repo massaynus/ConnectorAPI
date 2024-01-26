@@ -80,7 +80,7 @@ public class TokenizerService
 
     private int GeneratePrime()
     {
-        // TODO: Implement a SieveOfEratosthenes
+        // TODO: Implement a Sieve Of Eratosthenes
         return RandomNumberGenerator.GetInt32(int.MaxValue);
     }
 
